@@ -1,55 +1,18 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>AI Debugger</title>
-    <link rel="stylesheet" href="/static/style.css">
-</head>
-
-<body>
-
-<h1>🤖 AI Debugger</h1>
-
-<form action="/debug" method="POST">
-
-<select name="language">
-    <option value="python">Python</option>
-    <option value="java">Java</option>
-    <option value="cpp">C++</option>
-</select>
-
-<br><br>
-
-<textarea name="code" rows="15" cols="80"
-placeholder="Paste your code here...">{{code}}</textarea>
-
-<br><br>
-
-<button type="submit">Debug Code</button>
-
-</form>
-
 {% if result %}
-<h2>Result</h2>
-<pre>{{result}}</pre>
+<div class="result-box">
+
+    {% if result.status == "success" %}
+        <h3>{{ result.message }}</h3>
+
+    {% else %}
+        <h3>🚨 Debug Report</h3>
+
+        <p><b>Error Type:</b> {{ result.error_type }}</p>
+        <p><b>Line Number:</b> {{ result.line }}</p>
+        <p><b>Problem:</b> {{ result.details }}</p>
+        <p><b>Suggested Fix:</b> {{ result.fix }}</p>
+
+    {% endif %}
+
+</div>
 {% endif %}
-
-{% if fixed_code %}
-<h2>✅ Suggested Fix</h2>
-
-<button onclick="copyFix()">Copy</button>
-
-<pre id="fix">{{fixed_code}}</pre>
-
-<script>
-function copyFix() {
-    navigator.clipboard.writeText(
-        document.getElementById("fix").innerText
-    );
-    alert("Copied!");
-}
-</script>
-
-{% endif %}
-
-</body>
-</html>

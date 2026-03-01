@@ -1,104 +1,74 @@
 from flask import Flask, render_template, request
 import subprocess
-import requests
+import tempfile
+import re
 
 app = Flask(__name__)
 
 
-# ===============================
-# RUN CODE & DETECT ERRORS
-# ===============================
-def run_code(code, language):
-    try:
+# ---------- DEBUG ENGINE ----------
+def analyze_code(code):
 
-        # ---------- PYTHON ----------
-        if language == "python":
-            result = subprocess.run(
-                ["python", "-c", code],
-                capture_output=True,
-                text=True
-            )
-
-            if result.stderr:
-                return False, result.stderr
-            return True, result.stdout
-
-        # ---------- C++ ----------
-        elif language == "cpp":
-            return False, "⚠ C++ compiler not installed on server yet."
-
-        # ---------- JAVA ----------
-        elif language == "java":
-            with open("Main.java", "w") as f:
-                f.write(code)
-
-            compile_process = subprocess.run(
-                ["javac", "Main.java"],
-                capture_output=True,
-                text=True
-            )
-
-            if compile_process.stderr:
-                return False, compile_process.stderr
-
-            run_process = subprocess.run(
-                ["java", "Main"],
-                capture_output=True,
-                text=True
-            )
-
-            if run_process.stderr:
-                return False, run_process.stderr
-
-            return True, run_process.stdout
-
-        else:
-            return False, "Unsupported language"
-
-    except Exception as e:
-        return False, str(e)
-
-
-# ===============================
-# FREE AI FIX (HuggingFace API)
-# ===============================
-def ai_fix_code(code, error):
-
-    prompt = f"""
-You are an AI debugging assistant.
-
-Fix the following code and explain briefly.
-
-Code:
-{code}
-
-Error:
-{error}
-
-Return only corrected code.
-"""
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode="w") as f:
+        f.write(code)
+        filename = f.name
 
     try:
-        response = requests.post(
-            "https://api-inference.huggingface.co/models/bigcode/starcoder",
-            json={"inputs": prompt},
-            timeout=30
+        result = subprocess.run(
+            ["python", filename],
+            capture_output=True,
+            text=True,
+            timeout=5
         )
 
-        data = response.json()
+        if result.returncode == 0:
+            return {
+                "status": "success",
+                "message": "✅ Code executed successfully. No errors found."
+            }
 
-        if isinstance(data, list):
-            return data[0]["generated_text"]
+        error_output = result.stderr
 
-        return "AI suggestion unavailable right now."
+        # Extract line number
+        line_match = re.search(r'line (\d+)', error_output)
+        line_number = line_match.group(1) if line_match else "Unknown"
 
-    except Exception:
-        return "Free AI server busy. Try again later."
+        # Detect error type
+        if "SyntaxError" in error_output:
+            fix = "Check missing brackets, quotes, or colons."
+            error_type = "SyntaxError"
+
+        elif "NameError" in error_output:
+            fix = "Variable or function not defined. Check spelling or declaration."
+            error_type = "NameError"
+
+        elif "IndentationError" in error_output:
+            fix = "Fix indentation spacing (tabs or spaces mismatch)."
+            error_type = "IndentationError"
+
+        else:
+            fix = "Review logic or variable usage."
+            error_type = "Runtime Error"
+
+        return {
+            "status": "error",
+            "error_type": error_type,
+            "line": line_number,
+            "details": error_output.splitlines()[-1],
+            "fix": fix
+        }
+
+    except Exception as e:
+        return {
+            "status": "error",
+            "error_type": "System Error",
+            "line": "-",
+            "details": str(e),
+            "fix": "Try running code again."
+        }
 
 
-# ===============================
-# ROUTES
-# ===============================
+# ---------- ROUTES ----------
 @app.route("/")
 def home():
     return render_template("index.html")
@@ -106,28 +76,10 @@ def home():
 
 @app.route("/debug", methods=["POST"])
 def debug():
-
     code = request.form["code"]
-    language = request.form["language"]
-
-    success, output = run_code(code, language)
-
-    fixed_code = ""
-
-    if not success:
-        fixed_code = ai_fix_code(code, output)
-
-    return render_template(
-        "index.html",
-        result=output,
-        fixed_code=fixed_code,
-        language=language,
-        code=code
-    )
+    result = analyze_code(code)
+    return render_template("index.html", result=result, code=code)
 
 
-# ===============================
-# START SERVER
-# ===============================
 if __name__ == "__main__":
     app.run(debug=True)
