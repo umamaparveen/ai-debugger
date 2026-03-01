@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>AI Debugger</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+
+<body>
+
+<h1>🤖 AI Debugger</h1>
+
+<form action="/debug" method="POST">
+
+<select name="language">
+    <option value="python">Python</option>
+    <option value="java">Java</option>
+    <option value="cpp">C++</option>
+</select>
+
+<br><br>
+
+<textarea name="code" rows="15" cols="80"
+placeholder="Paste your code here...">{{code}}</textarea>
+
+<br><br>
+
+<button type="submit">Debug Code</button>
+
+</form>
+
+{% if result %}
+<h2>Result</h2>
+<pre>{{result}}</pre>
+{% endif %}
+
+{% if fixed_code %}
+<h2>✅ Suggested Fix</h2>
+
+<button onclick="copyFix()">Copy</button>
+
+<pre id="fix">{{fixed_code}}</pre>
+
+<script>
+function copyFix() {
+    navigator.clipboard.writeText(
+        document.getElementById("fix").innerText
+    );
+    alert("Copied!");
+}
+</script>
+
+{% endif %}
+
+</body>
+</html>
