@@ -74,7 +74,10 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/debug", methods=["POST"])
+@app.route("/debug", methods=["GET", "POST"])
+def debug():
+    if request.method == "GET":
+        return redirect("/")
 def debug():
     code = request.form["code"]
     result = analyze_code(code)
