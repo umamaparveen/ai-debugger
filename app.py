@@ -5,11 +5,11 @@ import re
 app = Flask(__name__)
 
 
-# ---------------- CODE RUNNER ----------------
+# ---------------- CODE DEBUG FUNCTION ----------------
 def run_code(code, language):
 
     try:
-        # ---------------- PYTHON ----------------
+        # ================= PYTHON =================
         if language == "python":
 
             result = subprocess.run(
@@ -19,84 +19,68 @@ def run_code(code, language):
             )
 
             if result.stderr:
-                import re
                 line_match = re.search(r'line (\d+)', result.stderr)
 
                 if line_match:
                     line_no = line_match.group(1)
-                    return f"❌ Python Error at line {line_no}\n\n{result.stderr}"
+                    return f"""❌ Python Error (Line {line_no})
 
-                return "❌ Error:\n" + result.stderr
+{result.stderr}
+
+✅ Possible Fix:
+Check indentation, missing colon (:), or brackets near line {line_no}.
+"""
+
+                return "❌ Python Error:\n" + result.stderr
 
             return "✅ No errors found!\n\nOutput:\n" + result.stdout
 
 
-        # ---------------- JAVA (SMART CHECK) ----------------
+        # ================= JAVA =================
         elif language == "java":
 
             lines = code.split("\n")
 
-            # missing semicolon check
+            # check missing semicolon
             for i, line in enumerate(lines, start=1):
-                line = line.strip()
+                check = line.strip()
 
                 if (
-                    line
-                    and not line.endswith(";")
-                    and "{" not in line
-                    and "}" not in line
-                    and "class" not in line
-                    and "if" not in line
-                    and "for" not in line
-                    and "while" not in line
+                    check
+                    and not check.endswith(";")
+                    and "{" not in check
+                    and "}" not in check
+                    and not check.startswith("//")
+                    and "class" not in check
+                    and "if" not in check
+                    and "for" not in check
+                    and "while" not in check
+                    and "main" not in check
                 ):
-                    return f"❌ Java Syntax Error near line {i}\nPossible missing semicolon ';'"
+                    return f"""❌ Java Syntax Error (Line {i})
 
-            # class check
+Possible missing semicolon ';'
+"""
+
+            # class validation
             if "class" not in code:
                 return "❌ Java Error: Missing class definition."
 
             return "✅ No obvious Java syntax errors found."
 
 
-        # ---------------- C++ ----------------
+        # ================= C++ =================
         elif language == "cpp":
-            return "⚠ C++ debugging unavailable (compiler not installed on server)."
+            return """⚠ C++ Debugging unavailable.
+
+Server compiler not installed yet.
+(Project demo mode)"""
 
 
-        else:
-            return "Unsupported language."
-
-    except Exception as e:
-        return "Server Error:\n" + str(e)
-{result.stderr}
-
-✅ Possible Fix:
-Check syntax near line {line_no}.
-Missing colon, bracket, or indentation issue possible.
-"""
-
-                return "❌ Error:\n" + result.stderr
-
-            # No error
-            return "✅ No errors found!\n\nOutput:\n" + result.stdout
-
-
-        # ---------- JAVA (Demo Syntax Check) ----------
-        elif language == "java":
-            if "class" not in code:
-                return "❌ Java Error: Missing class definition."
-            return "✅ Java syntax looks correct."
-
-
-        # ---------- C++ ----------
-        elif language == "cpp":
-            return "⚠ C++ compiler not installed on server yet."
-
-
-        # ---------- UNKNOWN ----------
+        # ================= UNKNOWN =================
         else:
             return "Unsupported language selected."
+
 
     except Exception as e:
         return "Server Error:\n" + str(e)
@@ -111,21 +95,23 @@ def home():
 @app.route("/debug", methods=["POST"])
 def debug():
 
-    code = request.form.get("code", "")
-    language = request.form.get("language", "")
+    code = request.form.get("code")
+    language = request.form.get("language")
 
     if not code:
         return render_template(
             "index.html",
-            result="⚠ Please enter code before debugging."
+            result="⚠ Please enter code."
         )
 
     result = run_code(code, language)
 
-    # IMPORTANT: ALWAYS RETURN
-    return render_template("index.html", result=result)
+    return render_template(
+        "index.html",
+        result=result
+    )
 
 
-# ---------------- RUN ----------------
+# ---------------- RUN APP ----------------
 if __name__ == "__main__":
     app.run(debug=True)
