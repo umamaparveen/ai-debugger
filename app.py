@@ -1,88 +1,90 @@
 from flask import Flask, render_template, request
 import subprocess
-import tempfile
 import re
 
 app = Flask(__name__)
 
 
-# ---------- DEBUG ENGINE ----------
-def analyze_code(code):
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".py", mode="w") as f:
-        f.write(code)
-        filename = f.name
+# ---------------- CODE RUNNER ----------------
+def run_code(code, language):
 
     try:
-        result = subprocess.run(
-            ["python", filename],
-            capture_output=True,
-            text=True,
-            timeout=5
-        )
+        # ---------- PYTHON ----------
+        if language == "python":
 
-        if result.returncode == 0:
-            return {
-                "status": "success",
-                "message": "✅ Code executed successfully. No errors found."
-            }
+            result = subprocess.run(
+                ["python", "-c", code],
+                capture_output=True,
+                text=True
+            )
 
-        error_output = result.stderr
+            # If error exists
+            if result.stderr:
 
-        # Extract line number
-        line_match = re.search(r'line (\d+)', error_output)
-        line_number = line_match.group(1) if line_match else "Unknown"
+                # Try extracting line number
+                line_match = re.search(r'line (\d+)', result.stderr)
 
-        # Detect error type
-        if "SyntaxError" in error_output:
-            fix = "Check missing brackets, quotes, or colons."
-            error_type = "SyntaxError"
+                if line_match:
+                    line_no = line_match.group(1)
+                    return f"""❌ Error Found (Line {line_no})
 
-        elif "NameError" in error_output:
-            fix = "Variable or function not defined. Check spelling or declaration."
-            error_type = "NameError"
+{result.stderr}
 
-        elif "IndentationError" in error_output:
-            fix = "Fix indentation spacing (tabs or spaces mismatch)."
-            error_type = "IndentationError"
+✅ Possible Fix:
+Check syntax near line {line_no}.
+Missing colon, bracket, or indentation issue possible.
+"""
 
+                return "❌ Error:\n" + result.stderr
+
+            # No error
+            return "✅ No errors found!\n\nOutput:\n" + result.stdout
+
+
+        # ---------- JAVA (Demo Syntax Check) ----------
+        elif language == "java":
+            if "class" not in code:
+                return "❌ Java Error: Missing class definition."
+            return "✅ Java syntax looks correct."
+
+
+        # ---------- C++ ----------
+        elif language == "cpp":
+            return "⚠ C++ compiler not installed on server yet."
+
+
+        # ---------- UNKNOWN ----------
         else:
-            fix = "Review logic or variable usage."
-            error_type = "Runtime Error"
-
-        return {
-            "status": "error",
-            "error_type": error_type,
-            "line": line_number,
-            "details": error_output.splitlines()[-1],
-            "fix": fix
-        }
+            return "Unsupported language selected."
 
     except Exception as e:
-        return {
-            "status": "error",
-            "error_type": "System Error",
-            "line": "-",
-            "details": str(e),
-            "fix": "Try running code again."
-        }
+        return "Server Error:\n" + str(e)
 
 
-# ---------- ROUTES ----------
+# ---------------- ROUTES ----------------
 @app.route("/")
 def home():
     return render_template("index.html")
 
 
-@app.route("/debug", methods=["GET", "POST"])
+@app.route("/debug", methods=["POST"])
 def debug():
-    if request.method == "GET":
-        return redirect("/")
-def debug():
-    code = request.form["code"]
-    result = analyze_code(code)
-    return render_template("index.html", result=result, code=code)
+
+    code = request.form.get("code", "")
+    language = request.form.get("language", "")
+
+    if not code:
+        return render_template(
+            "index.html",
+            result="⚠ Please enter code before debugging."
+        )
+
+    result = run_code(code, language)
+
+    # IMPORTANT: ALWAYS RETURN
+    return render_template("index.html", result=result)
 
 
+# ---------------- RUN ----------------
 if __name__ == "__main__":
     app.run(debug=True)

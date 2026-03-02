@@ -1,43 +1,80 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-
-    <!-- Google Verification Tag <meta name= (PASTE YOUR CODE HERE) -->
-    <meta name="google-site-verification" content="ufNVQrgVZElws6XWt5rVIutytx58H0V8ud5muhkUSx8" />
-
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Debugger</title>
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+            text-align: center;
+            padding: 40px;
+        }
+
+        textarea {
+            width: 80%;
+            height: 200px;
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        select, button {
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 6px;
+            border: none;
+        }
+
+        button {
+            background: #22c55e;
+            color: white;
+            cursor: pointer;
+        }
+
+        .result {
+            margin-top: 30px;
+            background: #111827;
+            padding: 20px;
+            border-radius: 10px;
+            white-space: pre-wrap;
+            text-align: left;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
 </head>
 
 <body>
 
-<div class="container">
-    <h1>🤖 AI Debugger</h1>
+<h1>🚀 AI Debugger</h1>
 
-    <form action="/debug" method="POST">
-        <label>Select Language:</label>
+<form action="/debug" method="POST">
 
-        <select name="language">
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-        </select>
+    <select name="language">
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+    </select>
 
-        <textarea name="code" placeholder="Paste your code here..." required></textarea>
+    <br>
 
-        <button type="submit">Debug Code</button>
-    </form>
+    <textarea name="code" placeholder="Paste your code here..." required></textarea>
 
-    {% if result %}
-        <div class="result">
-            <h3>Debug Result</h3>
-            <pre>{{ result }}</pre>
-        </div>
-    {% endif %}
+    <br>
+
+    <button type="submit">Debug Code</button>
+
+</form>
+
+{% if result %}
+<div class="result">
+{{ result }}
 </div>
+{% endif %}
 
 </body>
 </html>
