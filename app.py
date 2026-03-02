@@ -5,33 +5,36 @@ import re
 app = Flask(__name__)
 
 
-# ---------------- DEBUG FUNCTION ----------------
+# ---------------- CODE DEBUG FUNCTION ----------------
 def run_code(code, language):
 
-    print("LANGUAGE RECEIVED:", language)  # debug check
-
     try:
-        # ========= PYTHON =========
+        # ================= PYTHON =================
         if language == "python":
+            try:
+                result = subprocess.run(
+                    ["python", "-c", code],
+                    capture_output=True,
+                    text=True,
+                    timeout=5   # prevents infinite execution
+                )
 
-            result = subprocess.run(
-                ["python", "-c", code],
-                capture_output=True,
-                text=True
-            )
+                # If error exists
+                if result.stderr:
+                    match = re.search(r'line (\d+)', result.stderr)
+                    if match:
+                        line = match.group(1)
+                        return f"❌ Python Error at line {line}\n\n{result.stderr}"
 
-            if result.stderr:
-                match = re.search(r'line (\d+)', result.stderr)
-                if match:
-                    line = match.group(1)
-                    return f"❌ Python Error at line {line}\n\n{result.stderr}"
+                    return "❌ Python Error:\n" + result.stderr
 
-                return "❌ Python Error:\n" + result.stderr
+                return "✅ No errors found!\n\nOutput:\n" + result.stdout
 
-            return "✅ No errors found!\n\nOutput:\n" + result.stdout
+            except subprocess.TimeoutExpired:
+                return "⏱ Execution stopped: Code took too long or waiting for input."
 
 
-        # ========= JAVA =========
+        # ================= JAVA =================
         elif language == "java":
 
             lines = code.split("\n")
@@ -59,16 +62,17 @@ def run_code(code, language):
             return "✅ Java checked successfully (No obvious syntax errors)."
 
 
-        # ========= C++ =========
+        # ================= C++ =================
         elif language == "cpp":
             return "⚠ C++ compiler not installed on server yet."
 
 
+        # ================= UNKNOWN =================
         else:
-            return f"Unknown language received: {language}"
+            return "Unknown language selected."
 
     except Exception as e:
-        return str(e)
+        return f"Server Error: {str(e)}"
 
 
 # ---------------- ROUTES ----------------
@@ -82,6 +86,9 @@ def debug():
 
     code = request.form.get("code")
     language = request.form.get("language")
+
+    if not code:
+        return render_template("index.html", result="⚠ Please enter code.")
 
     result = run_code(code, language)
 
