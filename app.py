@@ -48,8 +48,7 @@ def debug():
         return render_template("index.html", result=result)
 
     except Exception as e:
-        return f"Error occurred: {str(e)}"
-
+        return render_template("index.html", result=f"Error: {str(e)}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 10000))
