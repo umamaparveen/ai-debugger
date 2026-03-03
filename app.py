@@ -7,18 +7,21 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
-
 @app.route("/debug", methods=["POST"])
 def debug():
-    code = request.form.get("code")
-    language = request.form.get("language")
+    try:
+        code = request.form.get("code")
+        language = request.form.get("language")
 
-    if not code:
-        return render_template("index.html", result="⚠ Please enter code.")
+        if not code:
+            return render_template("index.html", result="⚠ Please enter code.")
 
-    result = run_code(code, language)   # your existing function
+        result = run_code(code, language)
 
-    return render_template("index.html", result=result)
+        return render_template("index.html", result=result)
+
+    except Exception as e:
+        return f"Error occurred: {str(e)}"
 
 
 if __name__ == "__main__":
