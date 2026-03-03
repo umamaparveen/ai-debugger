@@ -6,7 +6,7 @@
 
     <style>
         body {
-            font-family: Arial;
+            font-family: Arial, sans-serif;
             background: #0f172a;
             color: white;
             text-align: center;
@@ -21,6 +21,7 @@
             border-radius: 8px;
             border: none;
             font-family: monospace;
+            font-size: 14px;
         }
 
         select, button {
@@ -50,21 +51,27 @@
             margin-right: auto;
             text-align: left;
             white-space: pre-wrap;
+            background: #1f2937;
         }
 
         .error {
-            background: #1f2937;
-            border-left: 5px solid #ef4444;
+            border-left: 6px solid #ef4444;
         }
 
         .fix {
-            background: #1f2937;
-            border-left: 5px solid #22c55e;
+            border-left: 6px solid #22c55e;
+        }
+
+        .explanation {
+            border-left: 6px solid #f59e0b;
         }
 
         .output {
-            background: #1f2937;
-            border-left: 5px solid #3b82f6;
+            border-left: 6px solid #3b82f6;
+        }
+
+        h1 {
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -77,8 +84,6 @@
 
     <select name="language" id="language">
         <option value="python">Python</option>
-        <option value="java">Java</option>
-        <option value="cpp">C++</option>
     </select>
 
     <br>
@@ -98,7 +103,8 @@
 
 <script>
 document.getElementById("debugForm").addEventListener("submit", async function(e) {
-    e.preventDefault(); // stop page reload
+
+    e.preventDefault(); // stop reload
 
     const code = document.getElementById("code").value;
     const language = document.getElementById("language").value;
@@ -116,6 +122,7 @@ document.getElementById("debugForm").addEventListener("submit", async function(e
 
     let html = "";
 
+    // ERROR
     if (data.error) {
         html += `<div class="box error">
 <h3>❌ Error</h3>
@@ -123,6 +130,7 @@ ${data.error}
 </div>`;
     }
 
+    // FIX
     if (data.fix) {
         html += `<div class="box fix">
 <h3>💡 Suggested Fix</h3>
@@ -130,6 +138,15 @@ ${data.fix}
 </div>`;
     }
 
+    // EXPLANATION ⭐
+    if (data.explanation) {
+        html += `<div class="box explanation">
+<h3>🧠 Explanation</h3>
+${data.explanation}
+</div>`;
+    }
+
+    // OUTPUT
     if (data.output) {
         html += `<div class="box output">
 <h3>✅ Output</h3>
@@ -138,6 +155,7 @@ ${data.output}
     }
 
     document.getElementById("resultArea").innerHTML = html;
+
 });
 </script>
 
