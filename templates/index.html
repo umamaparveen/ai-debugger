@@ -15,10 +15,12 @@
 
         textarea {
             width: 80%;
-            height: 200px;
+            height: 220px;
             margin-top: 15px;
-            padding: 10px;
+            padding: 12px;
             border-radius: 8px;
+            border: none;
+            font-family: monospace;
         }
 
         select, button {
@@ -32,18 +34,37 @@
             background: #22c55e;
             color: white;
             cursor: pointer;
+            font-weight: bold;
         }
 
-        .result {
-            margin-top: 30px;
-            background: #111827;
+        button:hover {
+            background: #16a34a;
+        }
+
+        .box {
+            margin-top: 25px;
             padding: 20px;
             border-radius: 10px;
-            white-space: pre-wrap;
-            text-align: left;
             width: 80%;
             margin-left: auto;
             margin-right: auto;
+            text-align: left;
+            white-space: pre-wrap;
+        }
+
+        .error {
+            background: #1f2937;
+            border-left: 5px solid #ef4444;
+        }
+
+        .fix {
+            background: #1f2937;
+            border-left: 5px solid #22c55e;
+        }
+
+        .output {
+            background: #1f2937;
+            border-left: 5px solid #3b82f6;
         }
     </style>
 </head>
@@ -52,16 +73,18 @@
 
 <h1>🚀 AI Debugger</h1>
 
-<form action="/debug" method="POST">
+<form id="debugForm">
 
-   <select name="language">
-    <option value="python">Python</option>
-    <option value="java">Java</option>
-    <option value="cpp">C++</option>
-</select>
+    <select name="language" id="language">
+        <option value="python">Python</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+    </select>
+
     <br>
 
-    <textarea name="code" placeholder="Paste your code here..." required></textarea>
+    <textarea id="code" name="code"
+        placeholder="Paste your code here..." required></textarea>
 
     <br>
 
@@ -69,11 +92,54 @@
 
 </form>
 
-{% if result %}
-<div class="result">
-{{ result }}
-</div>
-{% endif %}
+<!-- RESULT AREA -->
+<div id="resultArea"></div>
+
+
+<script>
+document.getElementById("debugForm").addEventListener("submit", async function(e) {
+    e.preventDefault(); // stop page reload
+
+    const code = document.getElementById("code").value;
+    const language = document.getElementById("language").value;
+
+    const formData = new FormData();
+    formData.append("code", code);
+    formData.append("language", language);
+
+    const response = await fetch("/debug", {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await response.json();
+
+    let html = "";
+
+    if (data.error) {
+        html += `<div class="box error">
+<h3>❌ Error</h3>
+${data.error}
+</div>`;
+    }
+
+    if (data.fix) {
+        html += `<div class="box fix">
+<h3>💡 Suggested Fix</h3>
+${data.fix}
+</div>`;
+    }
+
+    if (data.output) {
+        html += `<div class="box output">
+<h3>✅ Output</h3>
+${data.output}
+</div>`;
+    }
+
+    document.getElementById("resultArea").innerHTML = html;
+});
+</script>
 
 </body>
 </html>
